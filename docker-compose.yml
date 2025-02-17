@@ -1,0 +1,12 @@
+services:
+  admin_db: 
+    container_name: admin_db
+    ports:
+      - "15432:5432"
+    environment:
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=admin_db
+    image: postgres:14
+    volumes:
+      - './data/db:/var/lib/postgresql/data'
