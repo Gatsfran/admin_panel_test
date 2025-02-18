@@ -14,7 +14,7 @@ type DB struct {
 	pool *pgxpool.Pool
 }
 
-func New(ctx context.Context, cfg *config.Config) (*DB, error) {
+func New(ctx context.Context, cfg *config.Postgres) (*DB, error) {
 	pool, err := pgxpool.New(ctx, cfg.GetPostgresConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании пула соединений: %w", err)

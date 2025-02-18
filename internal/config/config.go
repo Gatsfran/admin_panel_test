@@ -20,12 +20,12 @@ type Config struct {
 }
 
 
-func (c *Config) GetPostgresConnectionString() string {
+func (c *Postgres) GetPostgresConnectionString() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		c.Postgres.Username,
-		c.Postgres.Password,
-		c.Postgres.Host,
-		c.Postgres.Port,
-		c.Postgres.Database,
+		c.Username,
+		c.Password,
+		c.Host,
+		c.Port,
+		c.Database,
 	)
 }
