@@ -4,40 +4,28 @@ import (
 	"fmt"
 	"time"
 )
-
 type User struct {
 	ID           int    `json:"id"`
 	UserName     string `json:"user_name"`
 	PasswordHash string `json:"password_hash"`
 }
 
-type Request struct {
-	ID          int       `json:"id"`
-	Contact     string    `json:"contact"`
-	ContactType string    `json:"contact_type"`
-	Message     string    `json:"message"`
-	CreatedAt   time.Time `json:"created_at"`
+type ContactType string
+
+const (
+	Email    ContactType = "email"
+	Phone    ContactType = "phone"
+	Telegram ContactType = "telegram"
+)
+
+type Order struct {
+	ID          int         `json:"id"`
+	Contact     string      `json:"contact"`
+	ContactType ContactType `json:"contact_type"`
+	Message     string      `json:"message"`
+	CreatedAt   time.Time   `json:"created_at"`
 }
 
-func (r Request) String() string {
-	return fmt.Sprintf(`
-	Информация о запросе:
-	========================
-	ID:             %d
-	Контакты:       %s
-	Сообщение       %s
-	Время создания: %s
-	========================
-	`, r.ID, r.Contact, r.Message, r.CreatedAt)
-}
-
-func (u User) String() string {
-	return fmt.Sprintf(`
-	Информация о запросе:
-	========================
-	ID:               %d
-	Имя пользователя: %s
-	Пороль            %s
-	========================
-	`, u.ID, u.UserName, u.PasswordHash)
+func (r Order) String() string {
+	return fmt.Sprintf(`Тип заявки: %s`, r.ContactType)
 }

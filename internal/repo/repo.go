@@ -1,18 +1,33 @@
 package repo
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/Gatsfran/admin_panel_test/internal/config"
 	"github.com/Gatsfran/admin_panel_test/internal/entity"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DB struct {
-	db *sql.DB
+	pool *pgxpool.Pool
 }
 
-func (d *DB) CreateRequest(r entity.Request) (int, error) {
+func New(cfg *config.Config) (*DB, error) {
+
+	pool, err := pgxpool.New(context.Background(), cfg.GetPostgresConnectionString())
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при создании пула соединений: %w", err)
+	}
+
+	if err := pool.Ping(context.Background()); err != nil {
+		return nil, fmt.Errorf("ошибка при проверке соединения с базой данных: %w", err)
+	}
+
+	return &DB{pool: pool}, nil
+}
+func (d *DB) CreateOrder(ctx context.Context, r *entity.Order) error {
 	query := `
 	INSERT INTO public.request (
 		contact,
@@ -24,26 +39,25 @@ func (d *DB) CreateRequest(r entity.Request) (int, error) {
 	RETURNING id`
 
 	var id int
-	err := d.db.QueryRow(query, r.Contact, r.ContactType, r.Message, time.Now()).Scan(&id)
+	err := d.pool.QueryRow(ctx, query, r.Contact, r.ContactType, r.Message, time.Now()).Scan(&id)
 	if err != nil {
-		return 0, err
+		return fmt.Errorf("ошибка создания запроса: %w", err)
 	}
-
-	return id, nil
+	return nil
 }
 
-func (d *DB) GetRequests() ([]entity.Request, error) {
+func (d *DB) GetOrder(ctx context.Context) ([]entity.Order, error) {
 	query := `SELECT id, contact, contact_type, message, created_at FROM public.request`
 
-	rows, err := d.db.Query(query)
+	rows, err := d.pool.Query(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ошибка получения запросов: %w", err)
 	}
 	defer rows.Close()
 
-	var requests []entity.Request
+	var requests []entity.Order
 	for rows.Next() {
-		var r entity.Request
+		var r entity.Order
 		err := rows.Scan(
 			&r.ID,
 			&r.Contact,
@@ -52,43 +66,38 @@ func (d *DB) GetRequests() ([]entity.Request, error) {
 			&r.CreatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("ошибка сканирования строк: %w", err)
 		}
 		requests = append(requests, r)
 	}
-
 	return requests, nil
 }
 
-func (d *DB) GetPasswordHash(userName string) (*entity.User, error) {
+func (d *DB) GetPasswordHash(ctx context.Context, userName string) error {
 	query := `
 	SELECT 
 		password_hash 
-	FROM 
-	public.users 
+	FROM public.users 
 	WHERE user_name = $1`
 
-	row := d.db.QueryRow(query, userName)
+	row := d.pool.QueryRow(ctx, query, userName)
 	user := entity.User{}
 
 	err := row.Scan(
 		&user.PasswordHash,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
-
-			return nil, fmt.Errorf("пользователь %v не найден", userName)
-		}
-		return nil, fmt.Errorf("ошибка при чтении данных пользователя: %w", err)
+		return fmt.Errorf("ошибка при получении хэша пароля: %w", err)
 	}
-
-	return &user, nil
+	return nil
 }
 
-func (d *DB) DeleteRequest(id int) error {
+func (d *DB) DeleteOrder(ctx context.Context, id int) error {
 	query := `DELETE FROM public.request WHERE id = $1`
 
-	_, err := d.db.Exec(query, id)
-
-	return err
+	_, err := d.pool.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при удалении заявки: %w", err)
+	}
+	return nil
 }
