@@ -15,7 +15,6 @@ type DB struct {
 }
 
 func New(ctx context.Context, cfg *config.Config) (*DB, error) {
-
 	pool, err := pgxpool.New(ctx, cfg.GetPostgresConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании пула соединений: %w", err)
@@ -40,8 +39,7 @@ func (d *DB) CreateClientOrder(ctx context.Context, r *entity.ClientOrder) error
 	VALUES ($1, $2, $3, $4) 
 	RETURNING id`
 
-	var id int
-	err := d.pool.QueryRow(ctx, query, r.Contact, r.ContactType, r.Message, time.Now()).Scan(&id)
+	err := d.pool.QueryRow(ctx, query, r.Contact, r.ContactType, r.Message, time.Now()).Scan(&r.ID)
 	if err != nil {
 		return fmt.Errorf("ошибка создания запроса: %w", err)
 	}
@@ -49,7 +47,7 @@ func (d *DB) CreateClientOrder(ctx context.Context, r *entity.ClientOrder) error
 }
 
 func (d *DB) ListClientOrder(ctx context.Context) ([]entity.ClientOrder, error) {
-	query := `SELECT id, contact, contact_type, message, created_at FROM public.request`
+	query := `SELECT id, contact, contact_type, message, created_at FROM public.client_order`
 
 	rows, err := d.pool.Query(ctx, query)
 	if err != nil {
@@ -57,7 +55,7 @@ func (d *DB) ListClientOrder(ctx context.Context) ([]entity.ClientOrder, error) 
 	}
 	defer rows.Close()
 
-	var requests []entity.ClientOrder
+	var clientorder []entity.ClientOrder
 	for rows.Next() {
 		var r entity.ClientOrder
 		err := rows.Scan(
@@ -70,12 +68,12 @@ func (d *DB) ListClientOrder(ctx context.Context) ([]entity.ClientOrder, error) 
 		if err != nil {
 			return nil, fmt.Errorf("ошибка сканирования строк: %w", err)
 		}
-		requests = append(requests, r)
+		clientorder = append(clientorder, r)
 	}
-	return requests, nil
+	return clientorder, nil
 }
 
-func (d *DB) GetPasswordHash(ctx context.Context, userName string) error {
+func (d *DB) GetPasswordHash(ctx context.Context, userName string) (string, error) {
 	query := `
 	SELECT 
 		password_hash 
@@ -83,15 +81,15 @@ func (d *DB) GetPasswordHash(ctx context.Context, userName string) error {
 	WHERE user_name = $1`
 
 	row := d.pool.QueryRow(ctx, query, userName)
-	user := entity.User{}
+	var passwordHash string
 
 	err := row.Scan(
-		&user.PasswordHash,
+		passwordHash,
 	)
 	if err != nil {
-		return fmt.Errorf("ошибка при получении хэша пароля: %w", err)
+		return "", fmt.Errorf("ошибка при получении хэша пароля: %w", err)
 	}
-	return nil
+	return passwordHash, nil
 }
 
 func (d *DB) DeleteClientOrder(ctx context.Context, id int) error {
