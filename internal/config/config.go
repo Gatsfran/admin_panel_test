@@ -2,17 +2,13 @@ package config
 
 import (
 	"fmt"
-	"log"
-
-	"github.com/caarlos0/env"
-	"github.com/joho/godotenv"
 )
 
 type Postgres struct {
 	Host     string `env:"DB_HOST" envDefault:"localhost"`
 	Port     string `env:"DB_PORT" envDefault:"15423"`
 	Username string `env:"DB_USERNAME" envDefault:"postgres"`
-	Password string `env:"DB_PASSWORD" envDefault:"docker"`
+	Password string `env:"DB_PASSWORD, required"`
 	Database string `env:"DB_NAME" envDefault:"admin_db"`
 }
 type Server struct {
@@ -23,16 +19,6 @@ type Config struct {
 	Server   Server
 }
 
-func New() Config {
-	if err := godotenv.Load(); err != nil {
-		log.Println("Файл .env не найден, используются переменные окружения по умолчанию")
-	}
-	var cfg Config
-	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("Ошибка при парсинге переменных окружения: %v", err)
-	}
-	return cfg
-}
 
 func (c *Config) GetPostgresConnectionString() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",

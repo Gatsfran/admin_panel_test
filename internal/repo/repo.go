@@ -14,22 +14,24 @@ type DB struct {
 	pool *pgxpool.Pool
 }
 
-func New(cfg *config.Config) (*DB, error) {
+func New(ctx context.Context, cfg *config.Config) (*DB, error) {
 
-	pool, err := pgxpool.New(context.Background(), cfg.GetPostgresConnectionString())
+	pool, err := pgxpool.New(ctx, cfg.GetPostgresConnectionString())
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании пула соединений: %w", err)
 	}
 
-	if err := pool.Ping(context.Background()); err != nil {
+	ctxNew, cancel := context.WithTimeout(ctx, time.Second*10)
+	defer cancel()
+	if err := pool.Ping(ctxNew); err != nil {
 		return nil, fmt.Errorf("ошибка при проверке соединения с базой данных: %w", err)
 	}
 
 	return &DB{pool: pool}, nil
 }
-func (d *DB) CreateOrder(ctx context.Context, r *entity.Order) error {
+func (d *DB) CreateClientOrder(ctx context.Context, r *entity.ClientOrder) error {
 	query := `
-	INSERT INTO public.request (
+	INSERT INTO public.client_order (
 		contact,
 		contact_type,
 		message,
@@ -46,7 +48,7 @@ func (d *DB) CreateOrder(ctx context.Context, r *entity.Order) error {
 	return nil
 }
 
-func (d *DB) ListOrder(ctx context.Context) ([]entity.Order, error) {
+func (d *DB) GetOrder(ctx context.Context) ([]entity.Order, error) {
 	query := `SELECT id, contact, contact_type, message, created_at FROM public.request`
 
 	rows, err := d.pool.Query(ctx, query)
@@ -55,9 +57,9 @@ func (d *DB) ListOrder(ctx context.Context) ([]entity.Order, error) {
 	}
 	defer rows.Close()
 
-	var requests []entity.Order
+	var requests []entity.ClientOrder
 	for rows.Next() {
-		var r entity.Order
+		var r entity.ClientOrder
 		err := rows.Scan(
 			&r.ID,
 			&r.Contact,
@@ -92,8 +94,8 @@ func (d *DB) GetPasswordHash(ctx context.Context, userName string) error {
 	return nil
 }
 
-func (d *DB) DeleteOrder(ctx context.Context, id int) error {
-	query := `DELETE FROM public.request WHERE id = $1`
+func (d *DB) DeleteClientOrder(ctx context.Context, id int) error {
+	query := `DELETE FROM public.client_order WHERE id = $1`
 
 	_, err := d.pool.Exec(ctx, query, id)
 	if err != nil {

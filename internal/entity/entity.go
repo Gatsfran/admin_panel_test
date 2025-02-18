@@ -18,7 +18,7 @@ const (
 	Telegram ContactType = "telegram"
 )
 
-type Order struct {
+type ClientOrder struct {
 	ID          int         `json:"id"`
 	Contact     string      `json:"contact"`
 	ContactType ContactType `json:"contact_type"`
@@ -26,6 +26,6 @@ type Order struct {
 	CreatedAt   time.Time   `json:"created_at"`
 }
 
-func (r Order) String() string {
+func (r ClientOrder) String() string {
 	return fmt.Sprintf(`Тип заявки: %s`, r.ContactType)
 }

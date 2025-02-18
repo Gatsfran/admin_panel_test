@@ -8,13 +8,13 @@ CREATE TABLE IF NOT EXISTS public.users (
 	CONSTRAINT users_unique UNIQUE (user_name)
 );
 
-CREATE TABLE IF NOT EXISTS public.request (
-	id serial NOT NULL,
+CREATE TABLE IF NOT EXISTS public.client_order (
+	id serial4 NOT NULL,
 	contact varchar(255) NOT NULL,
 	contact_type varchar(10) NOT NULL,
 	message text NOT NULL,
-	created_at timestamp with time zone NOT NULL,
-	CONSTRAINT request_pk PRIMARY KEY (id)
+	created_at timestamptz NOT NULL,
+	CONSTRAINT client_order_pk PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS public.outbox (
