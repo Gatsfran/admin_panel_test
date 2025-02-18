@@ -46,7 +46,7 @@ func (d *DB) CreateOrder(ctx context.Context, r *entity.Order) error {
 	return nil
 }
 
-func (d *DB) GetOrder(ctx context.Context) ([]entity.Order, error) {
+func (d *DB) ListOrder(ctx context.Context) ([]entity.Order, error) {
 	query := `SELECT id, contact, contact_type, message, created_at FROM public.request`
 
 	rows, err := d.pool.Query(ctx, query)
