@@ -12,21 +12,17 @@ import (
 )
 
 func main() {
-	// Загрузка конфигурации из файла .env
 	cfg := config.New()
 
-	// Создание контекста с таймаутом
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Инициализация базы данных
 	db, err := repo.New(ctx, &cfg.Postgres)
 	if err != nil {
 		log.Fatalf("Ошибка при подключении к базе данных: %v", err)
 	}
 
-	// Создание роутера
-	router := controller.New(db, &cfg) // Передаем db и cfg
+	router := controller.New(db, &cfg)
 
 	// Запуск сервера
 	log.Println("Сервер запущен на :8080")
