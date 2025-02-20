@@ -2,6 +2,11 @@ package config
 
 import (
 	"fmt"
+	"log"
+	
+
+	"github.com/caarlos0/env"
+	
 )
 
 type Postgres struct {
@@ -17,8 +22,18 @@ type Server struct {
 type Config struct {
 	Postgres Postgres
 	Server   Server
+	JWTSecret string `env:"JWT_SECRET,required"`
+
 }
 
+func New() Config {
+
+	var cfg Config
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatalf("Ошибка при парсинге переменных окружения: %v", err)
+	}
+	return cfg
+}
 
 func (c *Postgres) GetPostgresConnectionString() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
@@ -29,3 +44,4 @@ func (c *Postgres) GetPostgresConnectionString() string {
 		c.Database,
 	)
 }
+

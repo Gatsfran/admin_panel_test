@@ -14,6 +14,10 @@ type DB struct {
 	pool *pgxpool.Pool
 }
 
+func (d *DB) Close() {
+	panic("unimplemented")
+}
+
 func New(ctx context.Context, cfg *config.Postgres) (*DB, error) {
 	pool, err := pgxpool.New(ctx, cfg.GetPostgresConnectionString())
 	if err != nil {

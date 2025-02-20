@@ -12,27 +12,25 @@ import (
 )
 
 func main() {
-	cfg := &config.Postgres{
-		Host:     "localhost",
-		Port:     "15423",
-		Username: "postgres",
-		Password: "your_password",
-		Database: "admin_db",
-	}
+	// Загрузка конфигурации из файла .env
+	cfg := config.New()
 
+	// Создание контекста с таймаутом
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	db, err := repo.New(ctx, cfg)
+	// Инициализация базы данных
+	db, err := repo.New(ctx, &cfg.Postgres)
 	if err != nil {
 		log.Fatalf("Ошибка при подключении к базе данных: %v", err)
 	}
 
-	router := controller.New(db)
-	router.RegisterAuthRoutes() // Регистрация ручки /login
+	// Создание роутера
+	router := controller.New(db, &cfg) // Передаем db и cfg
 
+	// Запуск сервера
 	log.Println("Сервер запущен на :8080")
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	if err := http.ListenAndServe(":"+cfg.Server.Port, router); err != nil {
 		log.Fatalf("Ошибка при запуске сервера: %v", err)
 	}
 }
