@@ -22,8 +22,8 @@ func New(db *repo.DB, cfg *config.Config) *Router {
 		cfg:    cfg,
 	}
 
-	router.registerAuthRoutes()
-	router.registerClientOrderRoutes()
+	router.RegisterAuthRoutes()
+	router.RegisterClientOrderRoutes()
 
 	return router
 }

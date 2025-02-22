@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Gatsfran/admin_panel_test/internal/config"
 	"github.com/Gatsfran/admin_panel_test/internal/entity"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -14,8 +13,9 @@ type DB struct {
 	pool *pgxpool.Pool
 }
 
-func New(ctx context.Context, cfg *config.Postgres) (*DB, error) {
-	pool, err := pgxpool.New(ctx, cfg.GetPostgresConnectionString())
+func New(ctx context.Context, dsn string) (*DB, error) {
+	
+	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при создании пула соединений: %w", err)
 	}
@@ -83,9 +83,7 @@ func (d *DB) GetPasswordHash(ctx context.Context, userName string) (string, erro
 	row := d.pool.QueryRow(ctx, query, userName)
 	var passwordHash string
 
-	err := row.Scan(
-		passwordHash,
-	)
+	err := row.Scan(&passwordHash,)
 	if err != nil {
 		return "", fmt.Errorf("ошибка при получении хэша пароля: %w", err)
 	}

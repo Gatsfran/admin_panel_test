@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -32,7 +33,7 @@ func generateJWT(username string, jwtSecret string) (string, error) {
 	return token.SignedString([]byte(jwtSecret))
 }
 
-func validateJWT(tokenString string, jwtSecret string) (*Claims, error) {
+func ValidateJWT(tokenString string, jwtSecret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("неожиданный метод подписи: %v", token.Header["alg"])
@@ -43,40 +44,42 @@ func validateJWT(tokenString string, jwtSecret string) (*Claims, error) {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*Claims)
-	if !ok || !token.Valid {
-		return nil, errors.New("недействительный токен")
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
 	}
-
-	if claims.ExpiresAt.Before(time.Now()) {
-		return nil, fmt.Errorf("токен истек: %v", claims.ExpiresAt)
-	}
-
-	return claims, nil
+	return nil, errors.New("недействительный токен")
 }
 
-func authMiddleware(jwtSecret string) mux.MiddlewareFunc {
+func AuthMiddleware(jwtSecret string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("Запрос к защищённому маршруту: %s %s", r.Method, r.URL.Path)
+
 			tokenString := r.Header.Get("Authorization")
 			if tokenString == "" {
+				log.Printf("Токен отсутствует в запросе к %s", r.URL.Path)
 				http.Error(w, "Токен отсутствует", http.StatusUnauthorized)
 				return
 			}
 
-			claims, err := validateJWT(tokenString, jwtSecret)
+			if len(tokenString) > 7 && strings.ToUpper(tokenString[0:7]) == "BEARER " {
+				tokenString = tokenString[7:]
+			}
+
+			claims, err := ValidateJWT(tokenString, jwtSecret)
 			if err != nil {
+				log.Printf("Недействительный токен в запросе к %s: %v", r.URL.Path, err)
 				http.Error(w, "Недействительный токен", http.StatusUnauthorized)
 				return
 			}
 
-			log.Printf("Пользователь %s авторизован", claims.Username)
+			log.Printf("Пользователь %s авторизован для запроса к %s", claims.Username, r.URL.Path)
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-func (r *Router) registerAuthRoutes() {
+func (r *Router) RegisterAuthRoutes() {
 	r.router.HandleFunc("/login", func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)

@@ -11,23 +11,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func (r *Router) registerClientOrderRoutes() {
-	r.router.HandleFunc("/admin/client_orders", func(w http.ResponseWriter, req *http.Request) {
+func (r *Router) RegisterClientOrderRoutes() {
+	r.router.HandleFunc("/api/v1/client_orders", func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
-		case http.MethodGet:
-			clientOrders, err := r.db.ListClientOrder(req.Context())
-			if err != nil {
-				log.Printf("Ошибка при получении списка заявок: %v", err)
-				http.Error(w, "Не удалось получить список заявок", http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(clientOrders); err != nil {
-				log.Printf("Ошибка при кодировании списка заявок в JSON: %v", err)
-				http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
-				return
-			}
-
 		case http.MethodPost:
 			var clientOrder entity.ClientOrder
 			if err := json.NewDecoder(req.Body).Decode(&clientOrder); err != nil {
@@ -51,32 +37,43 @@ func (r *Router) registerClientOrderRoutes() {
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
-	}).Methods("GET", "POST")
+	}).Methods("POST")
 
-	protected := r.router.PathPrefix("/admin").Subrouter()
-	protected.Use(authMiddleware(r.cfg.JWTSecret)) // Используем JWTSecret из конфигурации
+	protected := r.router.PathPrefix("/api/v1/admin").Subrouter()
+	protected.Use(AuthMiddleware(r.cfg.JWTSecret))
+
+	protected.HandleFunc("/client_orders", func(w http.ResponseWriter, req *http.Request) {
+		clientOrders, err := r.db.ListClientOrder(req.Context())
+		if err != nil {
+			log.Printf("Ошибка при получении списка заказов: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(clientOrders); err != nil {
+			log.Printf("Ошибка при кодировании списка заказов в JSON: %v", err)
+			http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
+			return
+		}
+	}).Methods("GET")
 
 	protected.HandleFunc("/client_orders/{id}", func(w http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
 		id, err := strconv.Atoi(vars["id"])
 		if err != nil {
-			log.Printf("Неверный ID заявки: %v", err)
-			http.Error(w, "Неверный ID заявки", http.StatusBadRequest)
+			log.Printf("Неверный ID заказа: %v", err)
+			http.Error(w, "Неверный ID заказа", http.StatusBadRequest)
 			return
 		}
 
-		switch req.Method {
-		case http.MethodDelete:
-			if err := r.db.DeleteClientOrder(req.Context(), id); err != nil {
-				log.Printf("Ошибка при удалении заявки: %v", err)
-				http.Error(w, "Не удалось удалить заявку", http.StatusInternalServerError)
-				return
-			}
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Заявка с ID %d удален", id)
-
-		default:
-			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		if err := r.db.DeleteClientOrder(req.Context(), id); err != nil {
+			log.Printf("Ошибка при удалении заказа: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Заказ с ID %d удален", id)
 	}).Methods("DELETE")
 }
