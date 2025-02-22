@@ -2,30 +2,45 @@ package config
 
 import (
 	"fmt"
+	"log"
+	"time"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Postgres struct {
-	Host     string `env:"DB_HOST" envDefault:"localhost"`
-	Port     string `env:"DB_PORT" envDefault:"15423"`
-	Username string `env:"DB_USERNAME" envDefault:"postgres"`
-	Password string `env:"DB_PASSWORD, required"`
-	Database string `env:"DB_NAME" envDefault:"admin_db"`
+	DSN string `env:"POSTGRES_DSN,required"`
+	Host     string `env:"HOST" envDefault:"localhost"`
+	Port     string `env:"PORT" envDefault:"15432"`
+	Username string `env:"USERNAME" envDefault:"postgres"`
+	Password string `env:"PASSWORD, required"`
+	Database string `env:"NAME" envDefault:"admin_db"`
 }
 type Server struct {
-	Port string `env:"SERVER_PORT" envDefault:"8080"`
+	Port string `env:"PORT" envDefault:"8080"`
 }
 type Config struct {
-	Postgres Postgres
-	Server   Server
+	Postgres      Postgres      `envPrefix:"POSTGRES_"`
+	Server        Server        `envPrefix:"SERVER_"`
+	JWTSecret     string        `env:"JWT_SECRET,required"`
+	JWTExpiration time.Duration `env:"JWT_EXPIRATION,required"`
 }
 
+func New() *Config {
+	var cfg Config
+	if err := envconfig.Process("", &cfg); err != nil {
+		log.Fatalf("Ошибка при парсинге переменных окружения: %v", err)
+	}
+	fmt.Println(cfg)
+	return &cfg
+}
 
-func (c *Postgres) GetPostgresConnectionString() string {
+func (p *Postgres) GetPostgresConnectionString() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		c.Username,
-		c.Password,
-		c.Host,
-		c.Port,
-		c.Database,
+		p.Username,
+		p.Password,
+		p.Host,
+		p.Port,
+		p.Database,
 	)
 }
