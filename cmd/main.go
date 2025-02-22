@@ -4,10 +4,13 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/Gatsfran/admin_panel_test/internal/config"
 	"github.com/Gatsfran/admin_panel_test/internal/controller"
+	"github.com/Gatsfran/admin_panel_test/internal/cron"
 	"github.com/Gatsfran/admin_panel_test/internal/repo"
+	"github.com/Gatsfran/admin_panel_test/internal/telegram"
 )
 
 func main() {
@@ -22,6 +25,15 @@ func main() {
 	}
 
 	router := controller.New(db, cfg)
+
+	tgBot, err := telegram.NewTelegramBot(cfg.Telegram.Token, cfg.Telegram.ChatID)
+	if err != nil {
+		log.Fatalf("Ошибка при создании Telegram бота: %v", err)
+	}
+
+	cronProcess := cron.NewCron(db, tgBot, 1*time.Minute)
+	go cronProcess.Start(context.Background())
+	
 
 	log.Println("Сервер запущен на :8080")
 	if err := http.ListenAndServe(":"+cfg.Server.Port, router); err != nil {

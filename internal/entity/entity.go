@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 )
+
 type User struct {
 	ID           int    `json:"id"`
 	UserName     string `json:"user_name"`
@@ -28,4 +29,9 @@ type ClientOrder struct {
 
 func (r ClientOrder) String() string {
 	return fmt.Sprintf(`Тип заявки: %s`, r.ContactType)
+}
+
+type Outbox struct {
+	OrderID int  `json:"order_id"`
+	IsSent  bool `json:"is_sent"`
 }

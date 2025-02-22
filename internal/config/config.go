@@ -9,7 +9,7 @@ import (
 )
 
 type Postgres struct {
-	DSN string `env:"POSTGRES_DSN,required"`
+	DSN      string `env:"POSTGRES_DSN,required"`
 	Host     string `env:"HOST" envDefault:"localhost"`
 	Port     string `env:"PORT" envDefault:"15432"`
 	Username string `env:"USERNAME" envDefault:"postgres"`
@@ -19,11 +19,17 @@ type Postgres struct {
 type Server struct {
 	Port string `env:"PORT" envDefault:"8080"`
 }
+
+type Telegram struct {
+	Token  string `env:"TELEGRAM_TOKEN,required"`
+	ChatID int64  `env:"TELEGRAM_CHAT_ID,required"`
+}
 type Config struct {
 	Postgres      Postgres      `envPrefix:"POSTGRES_"`
 	Server        Server        `envPrefix:"SERVER_"`
 	JWTSecret     string        `env:"JWT_SECRET,required"`
 	JWTExpiration time.Duration `env:"JWT_EXPIRATION,required"`
+	Telegram      Telegram
 }
 
 func New() *Config {

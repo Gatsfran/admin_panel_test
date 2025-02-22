@@ -99,3 +99,45 @@ func (d *DB) DeleteClientOrder(ctx context.Context, id int) error {
 	}
 	return nil
 }
+
+func (d *DB) GetUnsentOrders(ctx context.Context) ([]entity.Outbox, error) {
+	query := `SELECT order_id, is_sent FROM outbox WHERE is_sent = FALSE`
+	rows, err := d.pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка при получении неотправленных заявок: %w", err)
+	}
+	defer rows.Close()
+
+	var outboxItems []entity.Outbox
+	for rows.Next() {
+		var item entity.Outbox
+		if err := rows.Scan(&item.OrderID, &item.IsSent); err != nil {
+			return nil, fmt.Errorf("ошибка при сканировании заявки: %w", err)
+		}
+		outboxItems = append(outboxItems, item)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("ошибка при обработке результатов: %w", err)
+	}
+
+	return outboxItems, nil
+}
+
+func (d *DB) MarkAsSent(ctx context.Context, id int) error {
+	query := `UPDATE outbox SET is_sent = TRUE WHERE order_id = $1`
+	_, err := d.pool.Exec(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при обновлении заявки: %w", err)
+	}
+	return nil
+}
+
+func (d *DB) AddToOutbox(ctx context.Context, orderID int) error {
+	query := `INSERT INTO outbox (order_id) VALUES ($1)`
+	_, err := d.pool.Exec(ctx, query, orderID)
+	if err != nil {
+		return fmt.Errorf("ошибка при добавлении заявки в outbox: %w", err)
+	}
+	return nil
+}
