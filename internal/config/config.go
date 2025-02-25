@@ -9,27 +9,35 @@ import (
 )
 
 type Postgres struct {
-	DSN      string `env:"POSTGRES_DSN,required"`
-	Host     string `env:"HOST" envDefault:"localhost"`
-	Port     string `env:"PORT" envDefault:"15432"`
-	Username string `env:"USERNAME" envDefault:"postgres"`
-	Password string `env:"PASSWORD, required"`
-	Database string `env:"NAME" envDefault:"admin_db"`
+	DSN      string `envconfig:"POSTGRES_DSN,required"`
+	Host     string `envconfig:"HOST" envDefault:"localhost"`
+	Port     string `envconfig:"PORT" envDefault:"15432"`
+	Username string `envconfig:"USERNAME" envDefault:"postgres"`
+	Password string `envconfig:"PASSWORD" required:"true"`
+	Database string `envconfig:"NAME" envDefault:"admin_db"`
 }
 type Server struct {
-	Port string `env:"PORT" envDefault:"8080"`
+	Port         string `envconfig:"PORT" envDefault:"8080"`
+	IsProduction bool   `envconfig:"IS_PRODUCTION" envDefault:"true"`
+	CORS         CORS   `envconfig:"CORS"`
+}
+
+type CORS struct {
+	Allow_origins []string `validate:"required"`
+	Allow_methods []string `validate:"required"`
+	Allow_headers []string `validate:"required"`
 }
 
 type Telegram struct {
-	Token  string `env:"TELEGRAM_TOKEN,required"`
-	ChatID int64  `env:"TELEGRAM_CHAT_ID,required"`
+	Token  string `envconfig:"TOKEN" required:"true"`
+	ChatID int64  `envconfig:"CHAT_ID" required:"true"`
 }
 type Config struct {
-	Postgres      Postgres      `envPrefix:"POSTGRES_"`
-	Server        Server        `envPrefix:"SERVER_"`
-	JWTSecret     string        `env:"JWT_SECRET,required"`
-	JWTExpiration time.Duration `env:"JWT_EXPIRATION,required"`
-	Telegram      Telegram
+	Postgres      *Postgres     `envconfig:"POSTGRES"`
+	Server        *Server       `envconfig:"SERVER"`
+	JWTSecret     string        `envconfig:"JWT_SECRET" required:"true"`
+	JWTExpiration time.Duration `envconfig:"JWT_EXPIRATION" required:"true"`
+	Telegram      *Telegram     `envconfig:"TELEGRAM"`
 }
 
 func New() *Config {
@@ -37,7 +45,10 @@ func New() *Config {
 	if err := envconfig.Process("", &cfg); err != nil {
 		log.Fatalf("Ошибка при парсинге переменных окружения: %v", err)
 	}
+	fmt.Printf("Telegram Token: %s\n", cfg.Telegram.Token)
+	fmt.Printf("Telegram ChatID: %d\n", cfg.Telegram.ChatID)
 	fmt.Println(cfg)
+
 	return &cfg
 }
 

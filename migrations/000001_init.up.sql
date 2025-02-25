@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS public.client_order (
 	CONSTRAINT client_order_pk PRIMARY KEY (id)
 );
 
-CREATE TABLEIF NOT EXISTS public.outbox (
+CREATE TABLE IF NOT EXISTS public.outbox (
 	order_id serial4 NOT NULL,
-	is_sent bool NOT NULL,
+	is_sent bool DEFAULT false NOT NULL,
 	CONSTRAINT outbox_pk PRIMARY KEY (order_id)
 );
 

@@ -13,13 +13,15 @@ import (
 type Cron struct {
 	outboxRepo *repo.DB
 	tgBot      *telegram.TelegramBot
+	chatID     int64
 	interval   time.Duration
 }
 
-func NewCron(outboxRepo *repo.DB, tgBot *telegram.TelegramBot, interval time.Duration) *Cron {
+func NewCron(outboxRepo *repo.DB, tgBot *telegram.TelegramBot, chatID int64, interval time.Duration) *Cron {
 	return &Cron{
 		outboxRepo: outboxRepo,
 		tgBot:      tgBot,
+		chatID:     chatID,
 		interval:   interval,
 	}
 }
@@ -40,8 +42,7 @@ func (c *Cron) Start(ctx context.Context) {
 }
 
 func (c *Cron) processOutbox(ctx context.Context) {
-	log.Println("Проверка неотправленных заявок...")
-
+	log.Printf("Проверка неотправленных заявок...")
 	outboxItems, err := c.outboxRepo.GetUnsentOrders(ctx)
 	if err != nil {
 		log.Printf("Ошибка при получении заявок: %v", err)
@@ -49,18 +50,15 @@ func (c *Cron) processOutbox(ctx context.Context) {
 	}
 
 	for _, item := range outboxItems {
-		// Отправляем сообщение в Telegram
-		message := fmt.Sprintf("Заявка #%d готова к обработке", item.OrderID)
-		if err := c.tgBot.SendMessage(message); err != nil {
+		message := fmt.Sprintf("Поступила заявка:%s", item)
+		if err := c.tgBot.SendMessage(c.chatID, message); err != nil {
 			log.Printf("Ошибка при отправке сообщения: %v", err)
 			continue
 		}
-
-		if err := c.outboxRepo.MarkAsSent(ctx, item.OrderID); err != nil {
+		if err := c.outboxRepo.MarkAsSent(ctx, item.ID); err != nil {
 			log.Printf("Ошибка при обновлении заявки: %v", err)
 			continue
 		}
-
-		log.Printf("Заявка #%d успешно отправлена", item.OrderID)
+		log.Printf("Заявка #%d успешно отправлена", item.ID)
 	}
 }

@@ -21,13 +21,26 @@ func (r *Router) RegisterClientOrderRoutes() {
 				http.Error(w, "Неверный формат данных", http.StatusBadRequest)
 				return
 			}
+
+			if err := clientOrder.Validate(); err != nil {
+				log.Printf("Ошибка валидации заявки: %v", err)
+				http.Error(w, "Невалидная заявка", http.StatusBadRequest)
+			}
+
+			if err := clientOrder.SetContactType(); err != nil {
+				log.Printf("Ошибка при определении типа контакта: %v", err)
+				http.Error(w, "Неверный формат контакта", http.StatusBadRequest)
+			}
+
 			if err := r.db.CreateClientOrder(req.Context(), &clientOrder); err != nil {
 				log.Printf("Ошибка при создании заявок: %v", err)
 				http.Error(w, "Не удалось создать заявку", http.StatusInternalServerError)
 				return
 			}
+
 			w.WriteHeader(http.StatusCreated)
 			w.Header().Set("Content-Type", "application/json")
+
 			if err := json.NewEncoder(w).Encode(clientOrder); err != nil {
 				log.Printf("Ошибка при кодировании заявок в JSON: %v", err)
 				http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)

@@ -19,21 +19,20 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db, err := repo.New(ctx, cfg.Postgres.DSN)
+	db, err := repo.New(ctx, cfg.Postgres)
 	if err != nil {
 		log.Fatalf("Ошибка при подключении к базе данных: %v", err)
 	}
 
 	router := controller.New(db, cfg)
 
-	tgBot, err := telegram.NewTelegramBot(cfg.Telegram.Token, cfg.Telegram.ChatID)
+	tgBot, err := telegram.NewTelegramBot(cfg.Telegram)
 	if err != nil {
 		log.Fatalf("Ошибка при создании Telegram бота: %v", err)
 	}
 
-	cronProcess := cron.NewCron(db, tgBot, 1*time.Minute)
-	go cronProcess.Start(context.Background())
-	
+	cronProcess := cron.NewCron(db, tgBot, cfg.Telegram.ChatID, 1*time.Minute)
+	go cronProcess.Start(ctx)
 
 	log.Println("Сервер запущен на :8080")
 	if err := http.ListenAndServe(":"+cfg.Server.Port, router); err != nil {
