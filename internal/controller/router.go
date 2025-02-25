@@ -22,7 +22,6 @@ func New(db *repo.DB, cfg *config.Config) *Router {
 		cfg:    cfg,
 	}
 
-	// Добавляем CORS middleware
 	r.Use(CORSMiddleware(cfg))
 
 	router.RegisterAuthRoutes()

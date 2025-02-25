@@ -9,7 +9,6 @@ import (
 )
 
 type Postgres struct {
-	DSN      string `envconfig:"POSTGRES_DSN,required"`
 	Host     string `envconfig:"HOST" envDefault:"localhost"`
 	Port     string `envconfig:"PORT" envDefault:"15432"`
 	Username string `envconfig:"USERNAME" envDefault:"postgres"`
@@ -45,10 +44,6 @@ func New() *Config {
 	if err := envconfig.Process("", &cfg); err != nil {
 		log.Fatalf("Ошибка при парсинге переменных окружения: %v", err)
 	}
-	fmt.Printf("Telegram Token: %s\n", cfg.Telegram.Token)
-	fmt.Printf("Telegram ChatID: %d\n", cfg.Telegram.ChatID)
-	fmt.Println(cfg)
-
 	return &cfg
 }
 
