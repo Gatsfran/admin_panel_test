@@ -23,9 +23,9 @@ type Server struct {
 }
 
 type CORS struct {
-	Allow_origins []string `validate:"required"`
-	Allow_methods []string `validate:"required"`
-	Allow_headers []string `validate:"required"`
+	Allow_origins []string `envconfig:"CORS_ALLOW_ORIGINS" required:"true"`
+	Allow_methods []string `envconfig:"CORS_ALLOW_METHODS" required:"true"`
+	Allow_headers []string `envconfig:"CORS_ALLOW_HEADERS" required:"true"`
 }
 
 type Telegram struct {
