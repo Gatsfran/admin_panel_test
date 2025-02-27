@@ -50,7 +50,7 @@ func (r *Router) RegisterClientOrderRoutes() {
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
-	}).Methods("POST")
+	}).Methods("POST", "OPTIONS")
 
 	protected := r.router.PathPrefix("/api/v1/admin").Subrouter()
 	protected.Use(AuthMiddleware(r.cfg.JWTSecret))
@@ -69,7 +69,7 @@ func (r *Router) RegisterClientOrderRoutes() {
 			http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
 			return
 		}
-	}).Methods("GET")
+	}).Methods("GET", "OPTIONS")
 
 	protected.HandleFunc("/client_orders/{id}", func(w http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
@@ -88,5 +88,5 @@ func (r *Router) RegisterClientOrderRoutes() {
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Заказ с ID %d удален", id)
-	}).Methods("DELETE")
+	}).Methods("DELETE", "OPTIONS")
 }
