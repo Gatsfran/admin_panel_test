@@ -115,5 +115,5 @@ func (r *Router) RegisterAuthRoutes() {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"token": token})
-	}).Methods("POST")
+	}).Methods("POST","OPTIONS")
 }

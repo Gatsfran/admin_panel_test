@@ -21,13 +21,26 @@ func (r *Router) RegisterClientOrderRoutes() {
 				http.Error(w, "Неверный формат данных", http.StatusBadRequest)
 				return
 			}
+
+			if err := clientOrder.Validate(); err != nil {
+				log.Printf("Ошибка валидации заявки: %v", err)
+				http.Error(w, "Невалидная заявка", http.StatusBadRequest)
+			}
+
+			if err := clientOrder.SetContactType(); err != nil {
+				log.Printf("Ошибка при определении типа контакта: %v", err)
+				http.Error(w, "Неверный формат контакта", http.StatusBadRequest)
+			}
+
 			if err := r.db.CreateClientOrder(req.Context(), &clientOrder); err != nil {
 				log.Printf("Ошибка при создании заявок: %v", err)
 				http.Error(w, "Не удалось создать заявку", http.StatusInternalServerError)
 				return
 			}
+
 			w.WriteHeader(http.StatusCreated)
 			w.Header().Set("Content-Type", "application/json")
+
 			if err := json.NewEncoder(w).Encode(clientOrder); err != nil {
 				log.Printf("Ошибка при кодировании заявок в JSON: %v", err)
 				http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
@@ -37,7 +50,7 @@ func (r *Router) RegisterClientOrderRoutes() {
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
-	}).Methods("POST")
+	}).Methods("POST", "OPTIONS")
 
 	protected := r.router.PathPrefix("/api/v1/admin").Subrouter()
 	protected.Use(AuthMiddleware(r.cfg.JWTSecret))
@@ -56,7 +69,7 @@ func (r *Router) RegisterClientOrderRoutes() {
 			http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
 			return
 		}
-	}).Methods("GET")
+	}).Methods("GET", "OPTIONS")
 
 	protected.HandleFunc("/client_orders/{id}", func(w http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
@@ -75,5 +88,5 @@ func (r *Router) RegisterClientOrderRoutes() {
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Заказ с ID %d удален", id)
-	}).Methods("DELETE")
+	}).Methods("DELETE", "OPTIONS")
 }

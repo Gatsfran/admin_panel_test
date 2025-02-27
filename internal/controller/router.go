@@ -22,6 +22,8 @@ func New(db *repo.DB, cfg *config.Config) *Router {
 		cfg:    cfg,
 	}
 
+	r.Use(CORSMiddleware(cfg))
+
 	router.RegisterAuthRoutes()
 	router.RegisterClientOrderRoutes()
 
