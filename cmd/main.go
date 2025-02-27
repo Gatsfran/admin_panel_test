@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/Gatsfran/admin_panel_test/internal/config"
 	"github.com/Gatsfran/admin_panel_test/internal/controller"
@@ -31,7 +30,7 @@ func main() {
 		log.Fatalf("Ошибка при создании Telegram бота: %v", err)
 	}
 
-	cronProcess := cron.NewCron(db, tgBot, cfg.Telegram.ChatID, 1*time.Minute)
+	cronProcess := cron.NewCron(db, tgBot, cfg.Telegram.ChatID, cfg.CronInterval)
 	go cronProcess.Start(ctx)
 
 	log.Println("Сервер запущен на :8080")
