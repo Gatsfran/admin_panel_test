@@ -37,6 +37,7 @@ type Config struct {
 	JWTSecret     string        `envconfig:"JWT_SECRET" required:"true"`
 	JWTExpiration time.Duration `envconfig:"JWT_EXPIRATION" required:"true"`
 	Telegram      *Telegram     `envconfig:"TELEGRAM"`
+	CronInterval  time.Duration `envconfig:"CRON_INTERVAL" envDefault:"1m"`
 }
 
 func New() *Config {
